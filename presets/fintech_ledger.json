@@ -1,0 +1,44 @@
+{
+  "project_name": "FINTECH_DARK_WEB_LEDGER",
+  "mode": "relational",
+  "locale": "en_US",
+  "seed": 2048,
+  "tables": [
+    {
+      "name": "accounts",
+      "row_count": 20,
+      "fields": [
+        {"name": "account_id", "type": "uuid", "is_primary": true},
+        {"name": "account_holder", "type": "name", "privacy": "none"},
+        {"name": "holder_email", "type": "email", "privacy": "mask"},
+        {"name": "tier", "type": "category", "options": ["VIP_OFFSHORE", "CORPORATE", "ANONYMOUS_PROXY", "COLD_VAULT"]},
+        {"name": "balance", "type": "currency", "min": 2500, "max": 150000, "outlier_rate": 0.05}
+      ]
+    },
+    {
+      "name": "transactions",
+      "row_count": 60,
+      "fields": [
+        {"name": "tx_id", "type": "uuid", "is_primary": true},
+        {"name": "account_id", "type": "foreign_key", "references": "accounts.account_id"},
+        {"name": "timestamp", "type": "datetime", "start": "2026-06-01", "end": "2026-09-30"},
+        {"name": "type", "type": "category", "options": ["DEBIT", "CREDIT"]},
+        {"name": "amount", "type": "currency", "min": 25, "max": 25000, "outlier_rate": 0.08},
+        {"name": "terminal_ip", "type": "ipv4", "privacy": "hash"},
+        {"name": "action_summary", "type": "ai_context", "prompt": "cyber banking wire transfers and anomalous structuring"}
+      ]
+    },
+    {
+      "name": "fraud_alerts",
+      "row_count": 15,
+      "fields": [
+        {"name": "alert_id", "type": "uuid", "is_primary": true},
+        {"name": "tx_id", "type": "foreign_key", "references": "transactions.tx_id"},
+        {"name": "risk_score", "type": "float", "min": 0.72, "max": 0.99, "distribution": "uniform"},
+        {"name": "detection_rule", "type": "category", "options": ["RAPID_TRANSFER_VELOCITY", "GEO_IMPOSSIBLE_TRAVEL", "STRUCTURING_CEILING_EVASION", "TOR_EXIT_NODE_INJECTION"]},
+        {"name": "flagged_anomalous", "type": "boolean"},
+        {"name": "analyst_notes", "type": "ai_context", "prompt": "anti-money laundering triage and SAR filings"}
+      ]
+    }
+  ]
+}

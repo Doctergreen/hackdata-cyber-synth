@@ -1,0 +1,15 @@
+{
+  "project_name": "CYBERSYNTH_DEFENSE_CONTRACT",
+  "mode": "document",
+  "locale": "en_US",
+  "seed": 9999,
+  "documents": {
+    "type": "invoice",
+    "template": "hacker_receipt",
+    "currency": "CYBER_CRED",
+    "tax_rate": 0.08,
+    "item_count": 6,
+    "account_holder": "ARASAKA DEFENSE CORP",
+    "format": "all"
+  }
+}

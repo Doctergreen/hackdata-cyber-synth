@@ -1,0 +1,43 @@
+{
+  "project_name": "CYBER_ECOMMERCE_V1",
+  "mode": "relational",
+  "locale": "en_US",
+  "seed": 4096,
+  "tables": [
+    {
+      "name": "customers",
+      "row_count": 25,
+      "fields": [
+        {"name": "customer_id", "type": "uuid", "is_primary": true},
+        {"name": "full_name", "type": "name", "privacy": "none"},
+        {"name": "email", "type": "email", "privacy": "mask"},
+        {"name": "membership", "type": "category", "options": ["STANDARD", "CYBER_PUNK", "CORP_VIP"]},
+        {"name": "shipping_address", "type": "address"}
+      ]
+    },
+    {
+      "name": "orders",
+      "row_count": 40,
+      "fields": [
+        {"name": "order_id", "type": "uuid", "is_primary": true},
+        {"name": "customer_id", "type": "foreign_key", "references": "customers.customer_id"},
+        {"name": "order_date", "type": "datetime", "start": "2026-04-01", "end": "2026-09-30"},
+        {"name": "status", "type": "category", "options": ["FULFILLED", "PENDING_DISPATCH", "ESCROW_LOCKED"]},
+        {"name": "payment_gateway", "type": "category", "options": ["LIGHTNING_NETWORK", "FEDWIRE_TOKEN", "USDC_SPLIT"]},
+        {"name": "total_amount", "type": "currency", "min": 50, "max": 12000}
+      ]
+    },
+    {
+      "name": "order_items",
+      "row_count": 100,
+      "fields": [
+        {"name": "item_id", "type": "uuid", "is_primary": true},
+        {"name": "order_id", "type": "foreign_key", "references": "orders.order_id"},
+        {"name": "item_name", "type": "category", "options": ["Sub-dermal Neural Interface", "Quantum Optical Cable 10m", "Encrypted BIOS Dongle", "Cyberdeck Cooling Mod", "EMP Hardened Case"]},
+        {"name": "quantity", "type": "integer", "min": 1, "max": 6},
+        {"name": "unit_price", "type": "currency", "min": 35.0, "max": 850.0},
+        {"name": "line_total", "type": "currency"}
+      ]
+    }
+  ]
+}
