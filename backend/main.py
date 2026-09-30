@@ -178,9 +178,14 @@ def generate_relational(seed: int = 42, cust_count: int = 10, orders_count: int 
 
 @app.post("/api/generate/document")
 def generate_document(doc_type: str = "invoice", seed: Optional[int] = None, masking: bool = False, hashing: bool = False):
+    import hashlib
     if seed is not None:
         random.seed(seed)
         Faker.seed(seed)
+
+    def mask_text(txt: str) -> str:
+        words = txt.split()
+        return " ".join([w[0] + "*" * max(len(w) - 1, 2) if len(w) > 1 else w for w in words])
 
     if doc_type == "invoice":
         catalog = [
@@ -190,7 +195,8 @@ def generate_document(doc_type: str = "invoice", seed: Optional[int] = None, mas
             ("Dedicated Cloud Worker", 450.00),
             ("Security compliance audit", 750.00),
             ("Priority 24/7 SLA", 280.00),
-            ("Database failover cluster", 620.00)
+            ("Database failover cluster", 620.00),
+            ("Neural Inference Pipeline", 950.00)
         ]
         num_items = random.randint(2, 5)
         selected = random.sample(catalog, num_items)
@@ -204,13 +210,18 @@ def generate_document(doc_type: str = "invoice", seed: Optional[int] = None, mas
         tax = round(subtotal * 0.08, 2)
         total = round(subtotal + tax, 2)
         
-        billed_to = fake.company()
-        if masking:
-            billed_to = billed_to[:2] + "**** " + billed_to.split()[-1]
-            
+        raw_company = fake.company()
+        billed_to = mask_text(raw_company) if masking else raw_company
+
+        raw_id = f"INV-{random.randint(10000, 99999)}"
+        if hashing:
+            inv_number = "INV-" + hashlib.sha256(raw_id.encode()).hexdigest()[:8].upper()
+        else:
+            inv_number = raw_id
+
         return {
             "type": "invoice",
-            "invoice_number": f"INV-{random.randint(10000, 99999)}",
+            "invoice_number": inv_number,
             "billed_to": billed_to,
             "from_entity": "Synth Data Co.",
             "date": datetime.now().strftime("%Y-%m-%d"),
@@ -220,35 +231,30 @@ def generate_document(doc_type: str = "invoice", seed: Optional[int] = None, mas
             "total": total
         }
     else:
-        # Dynamic Bank Statement with reconciled running balance
         merchants = [
             "Greenleaf Market", "Riverside Utilities", "CyberDeck Hardware", 
             "Cloud Cluster Hosting", "Metro Transit Card", "Quantum Coffee Roasters",
-            "Neural Link Subscription", "Security Gateway Service"
+            "Neural Link Subscription", "Security Gateway Service", "Vertex Data Center"
         ]
-        balance = round(random.uniform(1500.0, 4500.0), 2)
+        balance = round(random.uniform(1800.0, 5000.0), 2)
         records = []
-        for i in range(random.randint(6, 10)):
+        for i in range(random.randint(7, 11)):
             day = 10 + i * 2
             date_str = f"08-{day:02d}"
+            raw_desc = "Payroll deposit" if (i % 4 == 2) else random.choice(merchants)
+            desc = mask_text(raw_desc) if masking else raw_desc
+
             if i % 4 == 2:
-                # Credit (Payroll or refund)
                 credit = round(random.choice([1200.00, 2150.00, 850.00]), 2)
                 balance = round(balance + credit, 2)
-                records.append({"date": date_str, "description": "Payroll deposit", "debit": 0, "credit": credit, "balance": balance})
+                records.append({"date": date_str, "description": desc, "debit": 0, "credit": credit, "balance": balance})
             else:
                 debit = round(random.uniform(15.0, 180.0), 2)
                 balance = round(balance - debit, 2)
-                records.append({"date": date_str, "description": random.choice(merchants), "debit": debit, "credit": 0, "balance": balance})
+                records.append({"date": date_str, "description": desc, "debit": debit, "credit": 0, "balance": balance})
                 
-        holder = fake.name()
-        if masking:
-            p = holder.split()
-            holder = " ".join([x[0] + "***" for x in p])
-        acc_num = f"CYB-****{random.randint(1000, 9999)}"
-        if hashing:
-            import hashlib
-            acc_num = "ACC-" + hashlib.sha256(acc_num.encode()).hexdigest()[:8]
+        raw_acc = f"CYB-****{random.randint(1000, 9999)}"
+        acc_num = "ACC-" + hashlib.sha256(raw_acc.encode()).hexdigest()[:8] if hashing else raw_acc
 
         return {
             "type": "bank_statement",
