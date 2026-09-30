@@ -168,7 +168,39 @@ export default function Page() {
     setBusy(true); setPage(0); setSort(null);
     if (mode === "documents") {
       const d = await call(`/api/generate/document?doc_type=${docKind}`, {});
-      setDoc(d ? (d.document ?? d) : mockDoc(docKind, cfg));
+      if (d) {
+          const docData = d.document ?? d;
+          if (docKind === "invoice") {
+            setDoc({
+              kind: "invoice",
+              number: docData.invoice_number || docData.number || "INV-10001",
+              date: docData.date || new Date().toISOString().split("T")[0],
+              billedTo: docData.billed_to || docData.billedTo || "Acme Corp",
+              from: docData.from_entity || docData.from || "Synth Data Co.",
+              taxRate: docData.taxRate || 0.08,
+              items: (docData.items || []).map((i: any) => ({
+                item: i.item,
+                qty: i.qty || 1,
+                price: i.price ?? i.unit_price ?? 100
+              }))
+            });
+          } else {
+            setDoc({
+              kind: "statement",
+              account: docData.account || "**** 4821",
+              period: docData.period || "Last 90 days",
+              opening: docData.opening_balance ?? docData.opening ?? 1200,
+              txns: (docData.txns || docData.records || []).map((t: any) => ({
+                date: t.date || "08-01",
+                desc: t.desc || t.description || "Service",
+                debit: t.debit || 0,
+                credit: t.credit || 0
+              }))
+            });
+          }
+        } else {
+          setDoc(mockDoc(docKind, cfg));
+        }
     } else {
       let bodyPayload: any = cfg;
       if (mode === "tabular") {
@@ -360,14 +392,14 @@ function DocView({ doc }: { doc: Doc }) {
         <div className="my-4 flex justify-between text-xs"><div><p className="text-emerald-500/60">BILLED TO</p><p>{doc.billedTo}</p></div><div className="text-right"><p className="text-emerald-500/60">FROM</p><p>{doc.from}</p><p className="text-emerald-500/60">{doc.date}</p></div></div>
         <div className="overflow-x-auto"><table className="w-full text-xs">
           <thead className="bg-emerald-500/10 text-[#00ff66]"><tr><th className="p-2 text-left font-normal">Item</th><th className="p-2 text-right font-normal">Qty</th><th className="p-2 text-right font-normal">Price</th><th className="p-2 text-right font-normal">Amount</th></tr></thead>
-          <tbody>{doc.items.map((i, k) => <tr key={k} className="border-t border-emerald-500/10"><td className="p-2">{i.item}</td><td className="p-2 text-right">{i.qty}</td><td className="p-2 text-right">{money(i.price)}</td><td className="p-2 text-right">{money(i.qty * i.price)}</td></tr>)}</tbody>
+          <tbody>{(doc.items || []).map((i, k) => <tr key={k} className="border-t border-emerald-500/10"><td className="p-2">{i.item}</td><td className="p-2 text-right">{i.qty}</td><td className="p-2 text-right">{money(i.price)}</td><td className="p-2 text-right">{money(i.qty * i.price)}</td></tr>)}</tbody>
         </table></div>
         <div className="mt-4 space-y-1 text-right text-xs"><p>Subtotal: {money(sub)}</p><p>Tax ({doc.taxRate * 100}%): {money(tax)}</p><p className="text-base text-[#00ff66] drop-shadow-[0_0_6px_#00ff66]">Total: {money(sub + tax)}</p></div>
       </article>
     );
   }
   let bal = doc.opening;
-  const lines = doc.txns.map((t) => ({ ...t, bal: (bal = bal - t.debit + t.credit) }));
+  const lines = (doc.txns || []).map((t) => ({ ...t, bal: (bal = bal - t.debit + t.credit) }));
   return (
     <article className="print-doc mx-auto max-w-2xl border border-emerald-500/30 bg-[#050807] p-5 text-sm">
       <div className="flex justify-between border-b border-emerald-500/20 pb-3"><h2 className="tracking-widest text-[#00ff66]">BANK STATEMENT</h2><span className="text-emerald-500/70">{doc.account}</span></div>
