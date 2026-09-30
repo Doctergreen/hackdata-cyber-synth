@@ -219,7 +219,7 @@ export default function Page() {
           ]
         };
       }
-      const query = mode === "relational" ? `?cust_count=${Math.min(cfg.rows, 50)}&orders_count=${Math.min(Math.round(cfg.rows * 1.5), 100)}` : "";
+      const query = mode === "relational" ? `?cust_count=${cfg.rows}&orders_count=${Math.round(cfg.rows * 1.5)}&seed=${cfg.seed}` : "";
       const d = await call(`/api/generate/${mode}${query}`, bodyPayload);
       if (mode === "tabular") setTables({ tabular: d ? (Array.isArray(d) ? d : (d.data ?? d.rows)) : mockTables("tabular", cfg).tabular });
       else { const t: Tables = d ? (d.tables ?? d) : mockTables("relational", cfg); setTables(t); if (!t[active]) setActive("customers"); }
@@ -228,7 +228,7 @@ export default function Page() {
   }
 
   // initial preview, then re-generate mock instantly when the mode / doc type changes
-  useEffect(() => { generate(); /* eslint-disable-next-line */ }, [mode, docKind]);
+  // Auto-run disabled: generate only on user EXECUTE GENERATION click
 
   const tableKey = mode === "tabular" ? "tabular" : active;
   const cols = COLS[tableKey] ?? [];
