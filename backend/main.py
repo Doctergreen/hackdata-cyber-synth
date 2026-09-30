@@ -76,9 +76,13 @@ def generate_tabular(req: TabularRequest):
                 val = fake.word()
 
             # Privacy Rules (Slide 5)
-            if f.privacy == "mask" and isinstance(val, str) and "@" in val:
-                user_part, domain = val.split("@", 1)
-                val = f"{user_part[:1]}***@{domain}"
+            if f.privacy == "mask" and isinstance(val, str):
+                if "@" in val:
+                    user_part, domain = val.split("@", 1)
+                    val = f"{user_part[:1]}***@{domain}"
+                else:
+                    parts = val.split()
+                    val = " ".join([p[0] + "*" * (len(p) - 1) if len(p) > 1 else p for p in parts])
             elif f.privacy == "hash" and val is not None:
                 val = hashlib.sha256(str(val).encode()).hexdigest()[:12]
 
