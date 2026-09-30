@@ -350,15 +350,19 @@ export default function Page() {
         {/* RIGHT RAIL */}
         <aside className={`${box} space-y-4 p-4 lg:self-start`}>
           <p className="text-[11px] text-emerald-500/60">// CONFIGURATION</p>
-          <Field label="ROW_COUNT" val={cfg.rows}>
+          {mode !== "documents" && (
+<Field label="ROW_COUNT" val={cfg.rows}>
             <input type="range" min={10} max={1000} step={10} value={cfg.rows} onChange={(e) => set({ rows: +e.target.value })} className="w-full accent-[#00ff66]" />
           </Field>
+)}
           <Field label="RANDOM_SEED">
             <input type="number" value={cfg.seed} onChange={(e) => set({ seed: +e.target.value || 0 })} className={inp} />
           </Field>
-          <Field label="NOISE / OUTLIER_RATE" val={`${cfg.noise}%`}>
+          {mode !== "documents" && (
+<Field label="NOISE / OUTLIER_RATE" val={`${cfg.noise}%`}>
             <input type="range" min={0} max={50} value={cfg.noise} onChange={(e) => set({ noise: +e.target.value })} className="w-full accent-[#00ff66]" />
           </Field>
+)}
           <div className="space-y-2">
             <p className="text-[11px] text-emerald-400/70">PRIVACY_RULES</p>
             <Toggle label="Masking" on={cfg.masking} set={(v) => set({ masking: v })} />
