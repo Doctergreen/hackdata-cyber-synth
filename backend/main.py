@@ -87,15 +87,39 @@ def generate_tabular(req: TabularRequest):
     return {"status": "SUCCESS", "count": len(rows), "data": rows}
 
 @app.post("/api/generate/relational")
-def generate_relational(seed: int = 42, cust_count: int = 10, orders_count: int = 25):
+def generate_relational(seed: int = 42, cust_count: int = 10, orders_count: int = 25, masking: bool = False, hashing: bool = False, noise_rate: float = 0.0):
     random.seed(seed)
     Faker.seed(seed)
 
-    # 1. Customers (Parent Table)
-    customers = [
-        {"customer_id": f"CUST-{i:03d}", "name": fake.name(), "email": f"{fake.user_name()}@cyber.net"}
-        for i in range(1, cust_count + 1)
-    ]
+    # 1. Customers (Parent Table) with Privacy & Noise
+    import hashlib
+    customers = []
+    for i in range(1, cust_count + 1):
+        raw_name = fake.name()
+        email_user = fake.user_name()
+        domain = "cyber.net"
+        
+        status = "OK"
+        if random.random() < noise_rate:
+            status = "OUTLIER"
+        
+        if masking:
+            name_parts = raw_name.split()
+            masked_name = " ".join([p[0] + "*" * (len(p) - 1) if len(p) > 1 else p for p in name_parts])
+            masked_email = f"{email_user[:1]}***@{domain}"
+        else:
+            masked_name = raw_name
+            masked_email = f"{email_user}@{domain}"
+            
+        if hashing:
+            masked_email = hashlib.sha256(masked_email.encode()).hexdigest()[:12] + "@hash.local"
+
+        customers.append({
+            "customer_id": f"CUST-{i:03d}",
+            "name": masked_name,
+            "email": masked_email,
+            "status": status
+        })
 
     # 2. Orders (Child Table with FK)
     orders = []

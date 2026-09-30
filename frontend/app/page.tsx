@@ -219,7 +219,7 @@ export default function Page() {
           ]
         };
       }
-      const query = mode === "relational" ? `?cust_count=${cfg.rows}&orders_count=${Math.round(cfg.rows * 1.5)}&seed=${cfg.seed}` : "";
+      const query = mode === "relational" ? `?cust_count=${cfg.rows}&orders_count=${Math.round(cfg.rows * 1.5)}&seed=${cfg.seed}&masking=${cfg.masking}&hashing=${cfg.hashing}&noise_rate=${cfg.noise / 100}` : "";
       const d = await call(`/api/generate/${mode}${query}`, bodyPayload);
       if (mode === "tabular") setTables({ tabular: d ? (Array.isArray(d) ? d : (d.data ?? d.rows)) : mockTables("tabular", cfg).tabular });
       else { const t: Tables = d ? (d.tables ?? d) : mockTables("relational", cfg); setTables(t); if (!t[active]) setActive("customers"); }
