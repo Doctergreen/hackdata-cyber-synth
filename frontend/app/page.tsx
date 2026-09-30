@@ -102,8 +102,7 @@ function mockDoc(kind: DocKind, cfg: Cfg): Doc {
 }
 
 /* ───────── helpers ───────── */
-const stripPrivate = (rows: Row[]) =>
-  rows.map((row) => Object.fromEntries(Object.entries(row).filter(([k]) => !k.startsWith("_"))));
+const stripPrivate = (rows: Row[]) => rows.map(([...x]) => x).length ? rows.map((row) => Object.fromEntries(Object.entries(row).filter(([k]) => !k.startsWith("_")))) : rows;
 function download(name: string, text: string, type: string) {
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([text], { type }));
