@@ -177,20 +177,41 @@ def generate_relational(seed: int = 42, cust_count: int = 10, orders_count: int 
     }
 
 @app.post("/api/generate/document")
-def generate_document(doc_type: str = "invoice"):
+def generate_document(doc_type: str = "invoice", seed: Optional[int] = None, masking: bool = False, hashing: bool = False):
+    if seed is not None:
+        random.seed(seed)
+        Faker.seed(seed)
+
     if doc_type == "invoice":
-        # Slide 7 Reconciled Invoice Spec
-        items = [
-            {"item": "API access — Pro tier", "qty": 1, "unit_price": 1100.00, "amount": 1100.00},
-            {"item": "Onboarding support", "qty": 1, "unit_price": 140.00, "amount": 140.00}
+        catalog = [
+            ("API access — Pro tier", 1100.00),
+            ("Onboarding support", 140.00),
+            ("Storage add-on (TB)", 85.00),
+            ("Dedicated Cloud Worker", 450.00),
+            ("Security compliance audit", 750.00),
+            ("Priority 24/7 SLA", 280.00),
+            ("Database failover cluster", 620.00)
         ]
-        subtotal = sum(i["amount"] for i in items)
+        num_items = random.randint(2, 5)
+        selected = random.sample(catalog, num_items)
+        items = []
+        for name, unit_price in selected:
+            qty = random.randint(1, 4)
+            amount = round(unit_price * qty, 2)
+            items.append({"item": name, "qty": qty, "unit_price": unit_price, "amount": amount})
+            
+        subtotal = round(sum(i["amount"] for i in items), 2)
         tax = round(subtotal * 0.08, 2)
         total = round(subtotal + tax, 2)
+        
+        billed_to = fake.company()
+        if masking:
+            billed_to = billed_to[:2] + "**** " + billed_to.split()[-1]
+            
         return {
             "type": "invoice",
             "invoice_number": f"INV-{random.randint(10000, 99999)}",
-            "billed_to": fake.company(),
+            "billed_to": billed_to,
             "from_entity": "Synth Data Co.",
             "date": datetime.now().strftime("%Y-%m-%d"),
             "items": items,
@@ -199,16 +220,41 @@ def generate_document(doc_type: str = "invoice"):
             "total": total
         }
     else:
-        # Slide 8 Reconciled Bank Statement Spec
-        balance = 1204.30
-        records = [
-            {"date": "08-14", "description": "Greenleaf Market", "debit": 42.10, "credit": None, "balance": round(balance, 2)},
-            {"date": "08-15", "description": "Payroll deposit", "debit": None, "credit": 2150.00, "balance": round(balance - 42.10 + 2150.00, 2)},
-            {"date": "08-17", "description": "Riverside Utilities", "debit": 96.40, "credit": None, "balance": round(balance - 42.10 + 2150.00 - 96.40, 2)}
+        # Dynamic Bank Statement with reconciled running balance
+        merchants = [
+            "Greenleaf Market", "Riverside Utilities", "CyberDeck Hardware", 
+            "Cloud Cluster Hosting", "Metro Transit Card", "Quantum Coffee Roasters",
+            "Neural Link Subscription", "Security Gateway Service"
         ]
+        balance = round(random.uniform(1500.0, 4500.0), 2)
+        records = []
+        for i in range(random.randint(6, 10)):
+            day = 10 + i * 2
+            date_str = f"08-{day:02d}"
+            if i % 4 == 2:
+                # Credit (Payroll or refund)
+                credit = round(random.choice([1200.00, 2150.00, 850.00]), 2)
+                balance = round(balance + credit, 2)
+                records.append({"date": date_str, "description": "Payroll deposit", "debit": 0, "credit": credit, "balance": balance})
+            else:
+                debit = round(random.uniform(15.0, 180.0), 2)
+                balance = round(balance - debit, 2)
+                records.append({"date": date_str, "description": random.choice(merchants), "debit": debit, "credit": 0, "balance": balance})
+                
+        holder = fake.name()
+        if masking:
+            p = holder.split()
+            holder = " ".join([x[0] + "***" for x in p])
+        acc_num = f"CYB-****{random.randint(1000, 9999)}"
+        if hashing:
+            import hashlib
+            acc_num = "ACC-" + hashlib.sha256(acc_num.encode()).hexdigest()[:8]
+
         return {
             "type": "bank_statement",
-            "account_holder": fake.name(),
-            "account_number": f"CYB-****{random.randint(1000, 9999)}",
-            "transactions": records
+            "account": acc_num,
+            "period": "Last 30 days",
+            "opening": records[0]["balance"] if records else 1200.0,
+            "txns": records,
+            "records": records
         }

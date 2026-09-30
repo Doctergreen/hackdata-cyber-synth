@@ -167,7 +167,7 @@ export default function Page() {
   async function generate() {
     setBusy(true); setPage(0); setSort(null);
     if (mode === "documents") {
-      const d = await call(`/api/generate/document?doc_type=${docKind}`, {});
+      const d = await call(`/api/generate/document?doc_type=${docKind}&seed=${cfg.seed + Math.floor(Math.random() * 10000)}&masking=${cfg.masking}&hashing=${cfg.hashing}`, {});
       if (d) {
           const docData = d.document ?? d;
           if (docKind === "invoice") {
