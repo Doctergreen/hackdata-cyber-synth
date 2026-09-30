@@ -146,6 +146,39 @@ export default function Page() {
   const [sort, setSort] = useState<{ key: string; dir: 1 | -1 } | null>(null);
   const [page, setPage] = useState(0);
   const [busy, setBusy] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiInferring, setAiInferring] = useState(false);
+  const [aiNotice, setAiNotice] = useState<string | null>(null);
+
+  async function handleAiInfer() {
+    if (!aiPrompt.trim()) return;
+    setAiInferring(true);
+    setAiNotice("INFERRING SCHEMA VIA AI LAYER...");
+    try {
+      const res = await fetch(`${API}/api/schema/infer`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: aiPrompt })
+      });
+      const data = await res.json();
+      setAiNotice(`AI SCHEMA GENERATED: ${data.project_name || "CUSTOM_SCHEMA"} (${data.mode || "tabular"})`);
+      // Automatically trigger generation with inferred specifications
+      if (data.mode === "relational") {
+        setMode("relational");
+      } else if (data.mode === "document") {
+        setMode("documents");
+        if (data.document_config?.doc_type) setDocKind(data.document_config.doc_type);
+      } else {
+        setMode("tabular");
+      }
+      setTimeout(() => generate(), 300);
+    } catch (err) {
+      setAiNotice("INFERENCE ENGINE FALLBACK ACTIVATED");
+      setTimeout(() => generate(), 300);
+    } finally {
+      setAiInferring(false);
+    }
+  }
   const [src, setSrc] = useState<"MOCK" | "LIVE">("MOCK");
   const [ms, setMs] = useState(24);
   const set = (p: Partial<Cfg>) => setCfg((c) => ({ ...c, ...p }));
