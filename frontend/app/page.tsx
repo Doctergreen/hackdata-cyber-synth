@@ -12,7 +12,7 @@ type Invoice = { kind: "invoice"; number: string; date: string; billedTo: string
 type Statement = { kind: "statement"; account: string; period: string; opening: number; txns: { date: string; desc: string; debit: number; credit: number }[] };
 type Doc = Invoice | Statement;
 
-const API = "http://localhost:8000";
+const API = process.env.NEXT_PUBLIC_API_URL || "https://cyber-synth-api.onrender.com";
 const COLS: Record<string, [string, string][]> = {
   tabular: [["id", "int"], ["name", "string"], ["email", "string"], ["signup", "date"], ["balance", "decimal"]],
   customers: [["customer_id", "int PK"], ["name", "string"], ["email", "string"]],
