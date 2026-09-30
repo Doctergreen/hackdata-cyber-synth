@@ -1,0 +1,18 @@
+{
+  "name": "Cyber E-Commerce",
+  "mode": "relational",
+  "tables": [
+    {
+      "name": "customers",
+      "fields": {"customer_id": "uuid", "name": "name", "email": "email"}
+    },
+    {
+      "name": "orders",
+      "fields": {"order_id": "uuid", "customer_id": "foreign_key:customers.customer_id", "total": "float"}
+    },
+    {
+      "name": "order_items",
+      "fields": {"item_id": "uuid", "order_id": "foreign_key:orders.order_id", "price": "float", "quantity": "integer"}
+    }
+  ]
+}

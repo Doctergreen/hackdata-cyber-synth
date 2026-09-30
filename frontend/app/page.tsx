@@ -136,6 +136,7 @@ const Toggle = ({ label, on, set }: { label: string; on: boolean; set: (v: boole
 );
 
 /* ───────── page ───────── */
+
 export default function Page() {
   const [mode, setMode] = useState<Mode>("tabular");
   const [cfg, setCfg] = useState<Cfg>({ rows: 100, seed: 42, noise: 5, masking: false, hashing: false });
@@ -149,6 +150,7 @@ export default function Page() {
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiInferring, setAiInferring] = useState(false);
   const [aiNotice, setAiNotice] = useState<string | null>(null);
+
 
   async function handleAiInfer() {
     if (!aiPrompt.trim()) return;
@@ -179,6 +181,34 @@ export default function Page() {
       setAiInferring(false);
     }
   }
+  const handleExportSQL = () => {
+  if (!tables || Object.keys(tables).length === 0) return;
+
+  let sqlStatements: string[] = [];
+
+  Object.entries(tables).forEach(([tableName, rows]) => {
+    if (!Array.isArray(rows)) return;
+    rows.forEach((row: Record<string, any>) => {
+      const keys = Object.keys(row);
+      const values = keys.map((k) => {
+        const val = row[k];
+        if (val === null || val === undefined) return "NULL";
+        if (typeof val === "string") return `'${val.replace(/'/g, "''")}'`;
+        return val;
+      }).join(", ");
+      sqlStatements.push(`INSERT INTO ${tableName} (${keys.join(", ")}) VALUES (${values});`);
+    });
+  });
+
+  const blob = new Blob([sqlStatements.join("\n")], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", "dataset.sql");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
   const [src, setSrc] = useState<"MOCK" | "LIVE">("MOCK");
   const [ms, setMs] = useState(24);
   const set = (p: Partial<Cfg>) => setCfg((c) => ({ ...c, ...p }));
@@ -315,6 +345,21 @@ export default function Page() {
 
         {/* CENTER CANVAS */}
         <section className={`${box} min-w-0 p-4`} aria-live="polite">
+        <div className="flex items-center gap-2 mb-3 text-xs font-mono">
+  <span className="text-[#00ff66] font-bold">[PRESETS:</span>
+  <button onClick={() => setMode("tabular")} className="text-[#00ff66] hover:underline">
+    FINTECH LEDGER
+  </button>
+  <span className="text-[#00ff66]">|</span>
+  <button onClick={() => setMode("relational")} className="text-[#00ff66] hover:underline">
+    CYBER E-COMMERCE
+  </button>
+  <span className="text-[#00ff66]">|</span>
+  <button onClick={() => { setMode("documents"); setDocKind("invoice"); }} className="text-[#00ff66] hover:underline">
+  DEFENSE INVOICE
+</button>
+  <span className="text-[#00ff66]">]</span>
+</div>
           <div className="no-print mb-3 flex flex-wrap items-center justify-between gap-2 text-[11px]">
             <span className="text-[#00ff66]">&gt; LIVE_PREVIEW :: {mode.toUpperCase()}{busy && " :: GENERATING..."}</span>
             {mode === "relational" && (
@@ -383,6 +428,29 @@ export default function Page() {
         {/* RIGHT RAIL */}
         <aside className={`${box} space-y-4 p-4 lg:self-start`}>
           <p className="text-[11px] text-emerald-500/60">// CONFIGURATION</p>
+          <div className="border border-[#00ff66]/30 bg-black/60 p-4 rounded-md mb-4 text-[#00ff66] font-mono">
+  <div className="flex items-center gap-2 mb-2 font-bold text-xs uppercase tracking-wider">
+    <span className="h-2 w-2 rounded-full bg-[#00ff66] animate-pulse"></span>
+    AI SCHEMA INGESTION [OPENROUTER / GPT-4O-MINI]
+  </div>
+  <div className="flex gap-2">
+    <input
+      type="text"
+      value={aiPrompt}
+      onChange={(e) => setAiPrompt(e.target.value)}
+      placeholder="e.g. B2B invoice with 8% tax, or crypto trading ledger..."
+      className="flex-1 bg-black border border-[#00ff66]/40 text-[#00ff66] px-3 py-1.5 text-sm rounded outline-none focus:border-[#00ff66]"
+    />
+    <button
+      onClick={handleAiInfer}
+      disabled={aiInferring}
+      className="bg-[#00ff66] text-black font-bold px-4 py-1.5 rounded hover:bg-[#00ff66]/80 transition disabled:opacity-50 text-xs"
+    >
+      {aiInferring ? "INFERRING..." : "INFER"}
+    </button>
+  </div>
+  {aiNotice && <div className="mt-2 text-xs opacity-80">{aiNotice}</div>}
+</div>
           {mode !== "documents" && (
 <Field label="ROW_COUNT" val={cfg.rows}>
             <input type="range" min={10} max={1000} step={10} value={cfg.rows} onChange={(e) => set({ rows: +e.target.value })} className="w-full accent-[#00ff66]" />
@@ -412,6 +480,13 @@ export default function Page() {
                 <button key={f} onClick={() => exportData(f)} className="border border-emerald-500/30 py-1.5 text-xs uppercase hover:border-[#00ff66] hover:text-[#00ff66] hover:shadow-[0_0_10px_rgba(0,255,102,0.35)]">{f}</button>
               ))}
             </div>
+            <button
+  onClick={handleExportSQL}
+  className="w-full mt-2 border border-[#00ff66] text-[#00ff66] hover:bg-[#00ff66] hover:text-black py-1.5 rounded font-mono text-xs font-bold transition"
+>
+  SQL DUMP
+</button>
+
           </div>
         </aside>
       </div>

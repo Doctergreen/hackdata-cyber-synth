@@ -1,0 +1,13 @@
+{
+  "name": "Defense Invoice",
+  "mode": "document",
+  "docKind": "invoice",
+  "schema": {
+    "contract_id": "string",
+    "vendor": "company",
+    "currency": "CYBER_CRED",
+    "subtotal": "float",
+    "tax_rate": 0.08,
+    "total_amount": "float"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "Fintech Ledger",
+  "mode": "tabular",
+  "schema": {
+    "account_id": "uuid",
+    "account_type": "string",
+    "debit_amount": "float",
+    "credit_amount": "float",
+    "running_balance": "float",
+    "timestamp": "datetime"
+  }
+}
