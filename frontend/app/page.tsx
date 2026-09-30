@@ -167,7 +167,7 @@ export default function Page() {
   async function generate() {
     setBusy(true); setPage(0); setSort(null);
     if (mode === "documents") {
-      const d = await call("/api/generate/document", { type: docKind, ...cfg });
+      const d = await call(`/api/generate/document?doc_type=${docKind}`, {});
       setDoc(d ? (d.document ?? d) : mockDoc(docKind, cfg));
     } else {
       let bodyPayload: any = cfg;
@@ -187,7 +187,8 @@ export default function Page() {
           ]
         };
       }
-      const d = await call(`/api/generate/${mode}`, bodyPayload);
+      const query = mode === "relational" ? `?cust_count=${Math.min(cfg.rows, 50)}&orders_count=${Math.min(Math.round(cfg.rows * 1.5), 100)}` : "";
+      const d = await call(`/api/generate/${mode}${query}`, bodyPayload);
       if (mode === "tabular") setTables({ tabular: d ? (Array.isArray(d) ? d : d.rows) : mockTables("tabular", cfg).tabular });
       else { const t: Tables = d ? (d.tables ?? d) : mockTables("relational", cfg); setTables(t); if (!t[active]) setActive("customers"); }
     }
