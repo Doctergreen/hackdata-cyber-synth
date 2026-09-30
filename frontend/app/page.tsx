@@ -170,7 +170,24 @@ export default function Page() {
       const d = await call("/api/generate/document", { type: docKind, ...cfg });
       setDoc(d ? (d.document ?? d) : mockDoc(docKind, cfg));
     } else {
-      const d = await call(`/api/generate/${mode}`, cfg);
+      let bodyPayload: any = cfg;
+      if (mode === "tabular") {
+        const privacyMode = cfg.masking ? "mask" : (cfg.hashing ? "hash" : "none");
+        bodyPayload = {
+          row_count: cfg.rows,
+          seed: cfg.seed,
+          null_rate: cfg.noise / 200,
+          outlier_rate: cfg.noise / 100,
+          fields: [
+            { name: "id", type: "uuid", privacy: "none" },
+            { name: "name", type: "name", privacy: privacyMode },
+            { name: "email", type: "email", privacy: privacyMode },
+            { name: "signup", type: "date", privacy: "none" },
+            { name: "balance", type: "currency", privacy: "none" }
+          ]
+        };
+      }
+      const d = await call(`/api/generate/${mode}`, bodyPayload);
       if (mode === "tabular") setTables({ tabular: d ? (Array.isArray(d) ? d : d.rows) : mockTables("tabular", cfg).tabular });
       else { const t: Tables = d ? (d.tables ?? d) : mockTables("relational", cfg); setTables(t); if (!t[active]) setActive("customers"); }
     }
